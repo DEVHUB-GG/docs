@@ -23,7 +23,7 @@ coverY: 0
   &nbsp;·&nbsp;
   <a href="https://devhub.gg"><b>🛒 Store</b></a>
   &nbsp;·&nbsp;
-  <a href="https://discord.gg"><b>💬 Discord</b></a>
+  <a href="https://discord.com/invite/8uBVD36ZxD"><b>💬 Discord</b></a>
 </p>
 
 ---
