@@ -216,3 +216,7 @@
     * [server.lua](train-heist/configuration/server.lua.md)
     * [shared.lua](train-heist/configuration/shared.lua.md)
   * [Exports and Events](train-heist/exports-and-events.md)
+* [🔲 Grid System](grid/README.md)
+  * [🎫 Builder Commands](grid/commands.md)
+  * [📦 Adding Props](grid/adding-props.md)
+  * [📚 Exports](grid/exports.md)
