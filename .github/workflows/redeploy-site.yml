@@ -1,0 +1,21 @@
+name: Redeploy site after docs update
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Only the latest push needs to trigger a rebuild; cancel any queued run.
+concurrency:
+  group: redeploy-site
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger devhub.gg redeploy
+        run: |
+          curl --fail --silent --show-error \
+            "https://coolify.devhub.gg/api/v1/deploy?uuid=fyw6zr2b4kjkpkn2m3zd3bvr&force=false" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"
