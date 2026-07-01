@@ -215,5 +215,4 @@
     * [client.lua](train-heist/configuration/client.lua.md)
     * [server.lua](train-heist/configuration/server.lua.md)
     * [shared.lua](train-heist/configuration/shared.lua.md)
-    * [translation.lua](train-heist/configuration/translation.lua.md)
   * [Exports and Events](train-heist/exports-and-events.md)
