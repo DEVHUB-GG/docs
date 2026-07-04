@@ -29,10 +29,10 @@ A few things that apply everywhere:
   the shared **pool**, which is paid on Finish — and forfeited on Cancel / Fail.
 
 {% hint style="info" %}
-**Events are namespaced by your `Config.JobId`** so two job copies on one server never
-collide. You don't build the names by hand — `JobAPI.On('server:onJobStart', fn)` adds the
-prefix for you when listening, and the `Ev('...')` helper (available on both sides) builds
-a prefixed name when you need to fire one yourself.
+**The core's events are namespaced by your `Config.JobId`** so two job copies on one server
+never collide. You don't build the names by hand — `JobAPI.On('server:onJobStart', fn)` adds
+the prefix for you when listening. For your job's own gameplay events, give them a unique
+prefix (e.g. `myjob:server:...`) and rename it in each copy so two copies never cross-talk.
 {% endhint %}
 
 ***
@@ -223,7 +223,7 @@ JobAPI.BuildObjectiveIndex(phases)        -- flat  key -> definition  lookup acr
   for phase 1).
 * **BuildObjectiveIndex(phases)**: a `key -> definition` lookup so your gameplay can read a
   key's own data (prop / coords / label / etc.) without walking the phases each time. It is
-  also your server-side **whitelist** for client-reported keys (see the security box below).
+  also a handy server-side **whitelist** for validating keys reported by your own events.
 
 ***
 
@@ -435,93 +435,6 @@ issued for — the moment that run ends (however it ends), its pending reclaims 
 
 ***
 
-## <mark style="color:yellow;">**Your own gameplay events**</mark>
-
-Everything above is the **core's** API. The events *you* invent for your job's own plumbing are
-just normal FiveM events — `RegisterNetEvent` / `TriggerServerEvent` / `TriggerClientEvent`.
-Build the names with `Ev('...')` so they inherit your `Config.JobId` prefix and stay unique
-when the job is copied (the demo hardcodes a `jobcore_demo:` prefix instead — if you keep that
-style, rename it in every copy):
-
-```lua
--- client asks the server to work an objective
-TriggerServerEvent(Ev('server:objUse'), key)
-
--- server validates, then credits the shared objective
-local objectiveDefs = JobAPI.BuildObjectiveIndex(Config.Job.phases)
-RegisterNetEvent(Ev('server:objUse'), function(key)
-    local src = source
-    if type(key) ~= 'string' or not objectiveDefs[key] then return end -- whitelist the key
-    JobAPI.AddObjectiveProgress(src, key, 1)                           -- amount fixed server-side
-end)
-```
-
-{% hint style="danger" %}
-**Every networked event handler is attack surface.** A modified client can fire any net
-event with any arguments, any number of times. When you write your job's server handlers:
-
-* **Whitelist client input.** Check reported keys/ids against your own definitions
-  (`BuildObjectiveIndex`, your layout in the run store) before acting on them.
-* **Fix the numbers server-side.** Never take `amount`, `xp`, `reward` or a payout from
-  the client — the client says *"I did the thing"*, the server decides what it's worth.
-* **Re-check state, don't trust the premise.** The core already refuses progress from
-  players not in the run, but everything else — distance to the prop, "was this pickup
-  still available", cooldowns/rate limits for spammable actions — is yours to verify
-  (the demo's pickup handler is the pattern: look the id up, check `taken`, then credit).
-* **Keep trusted calls out of reach.** `JobAPI.FailJob`, `SetRunData`,
-  `SetObjectiveProgress` and similar must only run from your own validated server logic —
-  never as a 1:1 bridge from a client event.
-* **`JobAPI.On` is not for your own net events.** On the server it registers a
-  **local-only** handler — that is what makes the core's lifecycle hooks unspoofable, and
-  it also means a `TriggerServerEvent` from a client will never reach it. Your
-  client → server events must be explicit `RegisterNetEvent(Ev('server:...'), fn)`
-  registrations — and those handlers are exactly where all of the checks above apply.
-{% endhint %}
-
-***
-
-## <mark style="color:yellow;">**Config hooks (the other half of the API)**</mark>
-
-Every lifecycle event above also has a plain-function twin in `configs/sh.main.lua` —
-handy when a drop-in function beats wiring an event listener. All are optional no-ops by
-default:
-
-```lua
-Config.OnJobStart        = function(source, session) end
-Config.OnJobCancel       = function(source) end
-Config.OnJobFinish       = function(source, payout) end
-Config.OnJobFail         = function(source, reason) end
-Config.OnObjectiveUpdate = function(source, key, current, target) end
-Config.OnObjectiveComplete = function(source, key, session) end
-Config.OnPhaseComplete   = function(source, phaseIndex, phase) end
-Config.OnAllComplete     = function(leaderSource, session) end
-Config.OnLevelUp         = function(source, newLevel, oldLevel) end
-Config.OnTierUnlocked    = function(source, tier) end
-Config.OnQuestStep       = function(source, chainId, stepId) end
-Config.OnQuestComplete   = function(source, chainId) end
-Config.OnShopPurchase    = function(source, cart, total) end
-Config.OnShopSale        = function(source, cart, total) end
-```
-
-The lifecycle hooks fire at the same moments as their events (and with the same
-per-member / once-per-edge cadence); note `Config.OnAllComplete` receives the **leader's**
-source while the event carries the `partyId`. The tier and quest hooks are **hook-only** —
-they have no `JobAPI.On` event twin. The shop hooks do have event twins, but with slimmer
-arguments: the events carry `(source, total)` while the hooks also receive the `cart`.
-Like the server-side `JobAPI.On` listeners, hooks are **local-only** — nothing a client
-sends can trigger either of them directly.
-
-***
-
-## <mark style="color:yellow;">**Debug commands**</mark>
-
-With `Config.Debug = true` the core registers test commands so you can exercise a job
-without building the gameplay first: `/jobstart`, `/jobtest` (bumps the first incomplete
-objective by 1), `/jobfinish`, `/jobcancel`, `/jobquest`, `/jobboost`, and `/jobui`
-(opens the dashboard without the NPC).
-
-***
-
 ## <mark style="color:yellow;">**Putting it together**</mark>
 
 A compact server-side skeleton of an advanced job — phase 1 from the build hook, guarded
@@ -554,9 +467,11 @@ JobAPI.On('server:onJobStart', function(source, partyId)
     end)
 end)
 
--- your own gameplay event credits the objective — validated, fixed amount
+-- your own gameplay event credits the objective — validated, fixed amount.
+-- use your own unique prefix (rename it per job copy); never take the amount
+-- from the client, and whitelist the key against your own definitions.
 local objectiveDefs = JobAPI.BuildObjectiveIndex(Config.Job.phases)
-RegisterNetEvent(Ev('server:delivered'), function(key)
+RegisterNetEvent('myjob:server:delivered', function(key)
     local src = source
     if type(key) ~= 'string' or not objectiveDefs[key] then return end
     JobAPI.AddObjectiveProgress(src, key, 1)
