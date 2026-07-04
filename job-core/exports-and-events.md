@@ -98,7 +98,9 @@ JobAPI.GetScaling(source)        -- { partySize, objectiveCount } or nil
   the run. Party sizes above the highest `Config.Scaling.bySize` row fall back to the
   largest configured row.
 * **GetScaling** — the locked snapshot: `partySize` the run was sized for,
-  `objectiveCount` the base objective count handed to `Config.BuildObjectives`.
+  `objectiveCount` the scaling row's base objective count. Note that the
+  `ctx.missionCount` handed to `Config.BuildObjectives` is this value **plus** the
+  leader's `missionSlots` progression bonus, so the two can differ.
 * All four lifecycle calls return `ok, messageKey` — the keys map to `Config.Lang`
   entries (`'job_leader_only'`, `'job_not_active'`, `'job_not_finished'`, …), so you can
   surface failures with `Core.Notify(src, _T(key), 4000, 'error')`.
@@ -168,9 +170,16 @@ These are guaranteed — build your gameplay on them instead of re-implementing 
 * **`SetObjectiveProgress`** clamps to `0..target` and does **no** XP / pool /
   contribution accounting — it is a state-repair tool (load a checkpoint, admin fix),
   not a reward path.
+* **Each unit of progress is credited at most once.** If you lower a counter with
+  `SetObjectiveProgress` and progress is then re-earned through `AddObjectiveProgress`,
+  the counter advances again but the replayed units grant **no** XP, pool money or
+  contribution — state repair can never double-pay a run.
 * **Completion fires once.** `onObjectiveComplete` / `onPhaseComplete` fire the first time
   a counter (or phase) reaches its target and never again for that objective/phase — even
-  if you later lower the value with `SetObjectiveProgress` and re-raise it.
+  if you later lower the value with `SetObjectiveProgress` and re-raise it. The
+  **all-complete** edge is independent of that: it fires whenever *every* counter is at
+  target and it hasn't fired for the current set yet — so a lowered-then-re-raised run
+  still lands it.
 
 ### <mark style="color:yellow;">AppendObjectives is idempotent per key</mark>
 
@@ -314,14 +323,18 @@ These are the rules:
   `setPayoutSplit` rejects it.
 * **A disconnect is not a leave** (when `Config.Reconnect` is enabled): the dropped member
   can reclaim their spot within the window — solo runs suspend and wait, group runs keep
-  going and readmit them if the party is still on the same phase and a slot is free.
+  going and readmit them if the party is still on the same phase and a slot is free. A
+  member who returns to a party whose leader slot is itself offline gets **auto-promoted**,
+  so a live run always has a leader who can Finish or Cancel it.
 
 {% hint style="warning" %}
-**Inviting players mid-run costs the crew money.** The party will accept a new member
-while a run is active, but the **run will not**: the joiner has no mission HUD, cannot
-contribute, and is not paid at finish. Their even-split percentage still comes out of the
-total, so that slice of the pool is paid to **no one**. Have the crew finish (or cancel)
-the current run before growing the party.
+**The roster is locked while a run exists.** Invites are rejected with
+`'party_job_active'` for as long as the party has a run — including a pending invite that
+someone tries to accept after the run started, and a solo run suspended for reconnect.
+This is deliberate: the run snapshots its members at start, so a mid-run joiner could
+never take part, yet their share of the payout split would be paid to no one. Members can
+still **leave** (or be kicked) mid-run — the lock only stops the party from growing.
+The reconnect reclaim is the one exception: the core itself readmits a returning member.
 {% endhint %}
 
 ***
@@ -340,8 +353,10 @@ JobAPI.On('server:onJobFail', function(source, reason) end)            -- per pr
 JobAPI.On('server:onObjectiveUpdate', function(source, key, current, target) end)
 JobAPI.On('server:onObjectiveComplete', function(source, key) end)     -- once per objective
 JobAPI.On('server:onPhaseComplete', function(source, phaseIndex, phase) end) -- once per phase
-JobAPI.On('server:onAllComplete', function(partyId) end)               -- once per run
+JobAPI.On('server:onAllComplete', function(partyId) end)               -- once per completion edge (see below)
 JobAPI.On('server:onLevelUp', function(source, newLevel, oldLevel) end)
+JobAPI.On('server:onShopPurchase', function(source, total) end)        -- after a shop BUY checkout
+JobAPI.On('server:onShopSale', function(source, total) end)            -- after a shop SELL checkout
 ```
 
 **Per member or once per run?** This decides whether your handler needs a guard:
@@ -351,8 +366,11 @@ JobAPI.On('server:onLevelUp', function(source, newLevel, oldLevel) end)
   `if not JobAPI.IsLeader(source) then return end` guard (or must be idempotent, like a
   static `AppendObjectives`).
 * `onObjectiveComplete` (per objective), `onPhaseComplete` (per phase) and
-  `onAllComplete` (per run) fire **exactly once**. Their `source` is the member whose
-  progress crossed the line — any crew member, not necessarily the leader.
+  `onAllComplete` fire **exactly once** — with one deliberate exception: appending new
+  objectives after everything was complete **re-arms** `onAllComplete`, and it fires again
+  when the new set is done too. The `source` of the objective/phase events is the member
+  whose progress crossed the line — any crew member, not necessarily the leader
+  (`onAllComplete` carries only the `partyId`).
 
 Notes:
 
@@ -366,6 +384,10 @@ Notes:
   automatically by Job Core.
 * **onLevelUp** fires on any XP source that crosses a level — objective progress, quest
   rewards, tier-claim XP.
+* On the **server**, `JobAPI.On` listeners are **local-only**: only the core (or your own
+  local `TriggerEvent`) can fire them — a modified client cannot spoof a lifecycle event.
+  On the **client** they are registered as net events, since the core delivers them from
+  the server.
 
 ***
 
@@ -407,7 +429,8 @@ JobAPI.On('client:syncSession', function(data) end) -- run state changed
 configured window, Job Core drops them straight back into the same run and re-fires `jobStarted`
 + `syncSession`. Because you already react to those events, your world simply respawns — and
 whatever you kept in the per-run store is still there to answer their state requests. No
-reconnect code needed on your side.
+reconnect code needed on your side. A reclaim only ever returns a player to the run it was
+issued for — the moment that run ends (however it ends), its pending reclaims are void.
 {% endhint %}
 
 ***
@@ -448,18 +471,20 @@ event with any arguments, any number of times. When you write your job's server 
 * **Keep trusted calls out of reach.** `JobAPI.FailJob`, `SetRunData`,
   `SetObjectiveProgress` and similar must only run from your own validated server logic —
   never as a 1:1 bridge from a client event.
-* **Server listeners registered with `JobAPI.On` are net-reachable too** — a client can
-  fire those names directly. Before doing something powerful in one (like appending a
-  phase), re-verify the state with the getters, e.g. confirm `JobAPI.GetPhase(source)`
-  really is complete.
+* **`JobAPI.On` is not for your own net events.** On the server it registers a
+  **local-only** handler — that is what makes the core's lifecycle hooks unspoofable, and
+  it also means a `TriggerServerEvent` from a client will never reach it. Your
+  client → server events must be explicit `RegisterNetEvent(Ev('server:...'), fn)`
+  registrations — and those handlers are exactly where all of the checks above apply.
 {% endhint %}
 
 ***
 
 ## <mark style="color:yellow;">**Config hooks (the other half of the API)**</mark>
 
-Every event above also has a plain-function twin in `configs/sh.main.lua` — handy when a
-drop-in function beats wiring an event listener. All are optional no-ops by default:
+Every lifecycle event above also has a plain-function twin in `configs/sh.main.lua` —
+handy when a drop-in function beats wiring an event listener. All are optional no-ops by
+default:
 
 ```lua
 Config.OnJobStart        = function(source, session) end
@@ -470,6 +495,7 @@ Config.OnObjectiveUpdate = function(source, key, current, target) end
 Config.OnObjectiveComplete = function(source, key, session) end
 Config.OnPhaseComplete   = function(source, phaseIndex, phase) end
 Config.OnAllComplete     = function(leaderSource, session) end
+Config.OnLevelUp         = function(source, newLevel, oldLevel) end
 Config.OnTierUnlocked    = function(source, tier) end
 Config.OnQuestStep       = function(source, chainId, stepId) end
 Config.OnQuestComplete   = function(source, chainId) end
@@ -477,9 +503,13 @@ Config.OnShopPurchase    = function(source, cart, total) end
 Config.OnShopSale        = function(source, cart, total) end
 ```
 
-They fire at the same moments as their events (and with the same per-member / once-per-run
-cadence). Unlike `JobAPI.On` listeners, hooks are **local-only** — they cannot be triggered
-over the network.
+The lifecycle hooks fire at the same moments as their events (and with the same
+per-member / once-per-edge cadence); note `Config.OnAllComplete` receives the **leader's**
+source while the event carries the `partyId`. The tier and quest hooks are **hook-only** —
+they have no `JobAPI.On` event twin. The shop hooks do have event twins, but with slimmer
+arguments: the events carry `(source, total)` while the hooks also receive the `cart`.
+Like the server-side `JobAPI.On` listeners, hooks are **local-only** — nothing a client
+sends can trigger either of them directly.
 
 ***
 
@@ -533,11 +563,9 @@ RegisterNetEvent(Ev('server:delivered'), function(key)
 end)
 
 -- phased job: append the next phase the moment the current one is done.
--- onPhaseComplete fires once per phase; the state re-check keeps a spoofed
--- net call from skipping phases (JobAPI.On listeners are net-reachable).
+-- onPhaseComplete fires once per phase, and server-side JobAPI.On listeners
+-- are local-only — only the core can fire this, so no extra guard is needed
 JobAPI.On('server:onPhaseComplete', function(source, phaseIndex)
-    local phase = JobAPI.GetPhase(source)
-    if not phase or phase.index ~= phaseIndex or not phase.complete then return end
     local nextObjectives = JobAPI.GetPhaseObjectives(Config.Job.phases, phaseIndex + 1)
     if nextObjectives then JobAPI.AppendObjectives(source, nextObjectives) end
 end)
