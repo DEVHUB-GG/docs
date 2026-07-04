@@ -41,23 +41,23 @@ exports['devhub_jobCore']:getScaling(source) -- { size, missions, payout, xp } o
 
 ## <mark style="color:yellow;">**Server Exports — objectives & phases**</mark>
 
-Add objectives to a live run and push progress. `addProgress` is the main call you make
-from gameplay — it credits the shared counter, grants the contributor XP, tops up the
+Add objectives to a live run and push progress. `addObjectiveProgress` is the main call you
+make from gameplay — it credits the shared counter, grants the contributor XP, tops up the
 payout pool, and syncs the whole crew.
 
 ```lua
-exports['devhub_jobCore']:addProgress(source, key, amount)   -- bool — add shared progress (xp + pool + sync)
-exports['devhub_jobCore']:setObjective(source, key, current) -- bool — set progress absolutely (no xp/pool)
-exports['devhub_jobCore']:addObjectives(source, objectives)  -- bool — append objectives to the live run
-exports['devhub_jobCore']:getObjectives(source)              -- array of { key, label, current, target, completed } or nil
-exports['devhub_jobCore']:getPhase(source)                   -- { index, total, label, keys, complete } or nil
+exports['devhub_jobCore']:addObjectiveProgress(source, key, amount) -- bool — add shared progress (xp + pool + sync)
+exports['devhub_jobCore']:setObjective(source, key, current)        -- bool — set progress absolutely (no xp/pool)
+exports['devhub_jobCore']:appendObjectives(source, objectives)      -- bool — append objectives to the live run
+exports['devhub_jobCore']:getObjectives(source)                     -- array of { key, label, current, target, completed } or nil
+exports['devhub_jobCore']:getPhase(source)                          -- { index, total, label, keys, complete } or nil
 ```
 
-* **addObjectives(source, objectives)**: `objectives` is an array. Each entry:
+* **appendObjectives(source, objectives)**: `objectives` is an array. Each entry:
 
   ```lua
   {
-      key    = 'deliver_1',     -- unique id you use with addProgress
+      key    = 'deliver_1',     -- unique id you use with addObjectiveProgress
       label  = 'Deliver the package', -- shown in the mission HUD
       target = 3,               -- units needed to complete
       xp     = 25,              -- xp per unit to the contributor (optional)
@@ -69,47 +69,22 @@ exports['devhub_jobCore']:getPhase(source)                   -- { index, total, 
 
 * **getPhase(source)**: for phased jobs, the current phase — `index` / `total`, its `label`,
   the objective `keys` in it, and `complete` (all of the phase's objectives done). Returns
-  `nil` when the job has no phases. Use it to gate phase-based gameplay.
+  `nil` when the job has no phases. Use it to gate phase-based gameplay. Job Core also fires the
+  **onPhaseComplete** event (below) the instant a phase's objectives are all done, so you
+  usually react to that instead of polling here.
 
 ***
 
-## <mark style="color:yellow;">**Server Exports — rewards, XP & progression**</mark>
-
-```lua
-exports['devhub_jobCore']:addReward(source, amount)          -- bool — add money straight to the shared pool (scaled)
-exports['devhub_jobCore']:addXp(source, amount)              -- bool — grant XP to the player
-exports['devhub_jobCore']:getXp(source)                      -- number — total XP
-exports['devhub_jobCore']:getLevel(source)                   -- number — current level
-exports['devhub_jobCore']:getProgress(source)                -- progress table (see below) or nil
-exports['devhub_jobCore']:getProgressionBonus(source)        -- { xpMult, moneyMult, missionSlots, vehicle, itemChance }
-exports['devhub_jobCore']:claimTier(source, index)           -- ok, key — claim a progression tier's reward
-```
-
-* **getProgress(source)** returns:
-
-  ```lua
-  { level, totalXp, xpIntoLevel, xpForNext, isMax, percent, completedJobs }
-  ```
-
-* **getProgressionBonus(source)**: the player's cumulative passive bonuses from tiers they've
-  reached — XP/money multipliers, extra mission slots, unlocked vehicle model, item chance.
-
-***
-
-## <mark style="color:yellow;">**Server Exports — quests & boosts**</mark>
+## <mark style="color:yellow;">**Server Exports — quests**</mark>
 
 ```lua
 exports['devhub_jobCore']:addQuestProgress(source, chainId, amount) -- bool — advance a persistent quest chain
-exports['devhub_jobCore']:completeQuestStep(source, chainId)        -- bool — finish the current step of a chain
 exports['devhub_jobCore']:getQuestProgress(source)                  -- array of quest chains with per-step state
-exports['devhub_jobCore']:useBoost(source, itemName)                -- ok[, key, remaining] — activate a boost item
-exports['devhub_jobCore']:getBoostMultipliers(source)               -- { xpMult, moneyMult } from active boosts
 ```
 
 * Quests are **persistent** and separate from a run's mission objectives — drive them from any
-  gameplay with `addQuestProgress`.
-* **useBoost**: returns `false, key, remaining` when the boost is on cooldown (`remaining` is a
-  human-readable clock).
+  gameplay with `addQuestProgress`. Completing a step (or the whole chain) grants its configured
+  reward and fires the `Config.OnQuestStep` / `Config.OnQuestComplete` hooks.
 
 ***
 
@@ -150,18 +125,20 @@ AddEventHandler('devhub_jobCore:server:onJobCancel', function(source) end)
 AddEventHandler('devhub_jobCore:server:onJobFinish', function(source, amountPaid) end)
 AddEventHandler('devhub_jobCore:server:onObjectiveUpdate', function(source, key, current, target) end)
 AddEventHandler('devhub_jobCore:server:onObjectiveComplete', function(source, key) end)
+AddEventHandler('devhub_jobCore:server:onPhaseComplete', function(source, phaseIndex, phase) end)
 AddEventHandler('devhub_jobCore:server:onAllComplete', function(partyId) end)
 AddEventHandler('devhub_jobCore:server:onLevelUp', function(source, newLevel, oldLevel) end)
-AddEventHandler('devhub_jobCore:server:onTierUnlocked', function(source, level, tier) end)
-AddEventHandler('devhub_jobCore:server:onQuestStep', function(source, chainId, stepId) end)
-AddEventHandler('devhub_jobCore:server:onQuestComplete', function(source, chainId) end)
 ```
 
 * **onJobStart** fires once per member with the shared `partyId`. A great spot to inject your
-  own objectives with `addObjectives`.
-* **onObjectiveComplete** fires the moment a shared objective is finished; **onAllComplete** fires
-  when every current objective is done.
-* **onJobFinish** fires per member with the exact `amountPaid` (their split of the pool).
+  own objectives with `appendObjectives`.
+* **onObjectiveComplete** fires the moment a shared objective is finished. **onPhaseComplete**
+  fires once when every objective of the *current phase* is done (phased jobs only) — it's fired
+  **before** the run's "all done" check, so appending the next phase's objectives from here keeps
+  the run going. **onAllComplete** fires when every objective of the whole run is done.
+* **onJobFinish** fires per member with the exact `amountPaid` (their split of the pool). Each
+  member may also receive a **bonus item** on finish — driven by their progression `itemChance`
+  and granted automatically by Job Core.
 
 ***
 
@@ -208,19 +185,24 @@ reconnect code needed on your side.
 ## <mark style="color:yellow;">**Putting it together**</mark>
 
 A minimal companion resource that adds an objective when a run starts, credits it from its own
-gameplay, and reacts when the crew is done:
+gameplay, advances phases, and reacts when the crew is done:
 
 ```lua
 -- SERVER (your resource)
 AddEventHandler('devhub_jobCore:server:onJobStart', function(source, partyId)
-    exports['devhub_jobCore']:addObjectives(source, {
+    exports['devhub_jobCore']:appendObjectives(source, {
         { key = 'deliver', label = 'Deliver the package', target = 1, xp = 25, reward = 500 },
     })
 end)
 
 -- ...later, when your gameplay decides the package was delivered:
 RegisterNetEvent('my_job:server:delivered', function()
-    exports['devhub_jobCore']:addProgress(source, 'deliver', 1)
+    exports['devhub_jobCore']:addObjectiveProgress(source, 'deliver', 1)
+end)
+
+-- phased job? append the next phase the moment the current one is done:
+AddEventHandler('devhub_jobCore:server:onPhaseComplete', function(source, phaseIndex, phase)
+    -- exports['devhub_jobCore']:appendObjectives(source, objectivesForPhase(phaseIndex + 1))
 end)
 
 AddEventHandler('devhub_jobCore:server:onAllComplete', function(partyId)
