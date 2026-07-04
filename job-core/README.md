@@ -1,8 +1,8 @@
 ---
 description: >-
   Job Core is a group-based job framework. This documentation covers the
-  developer integration API — the exports and events you use to build jobs,
-  missions and reward flows from your own resource.
+  developer API — the JobAPI table and events you use to build jobs, missions
+  and reward flows inside a job copy.
 ---
 
 # 🧰 Job Core
@@ -15,10 +15,10 @@ Job Core is a **group-based job framework**: parties/crews, a shared mission ses
 with synced objectives and a HUD, a shared payout pool with leader-defined splits,
 XP/levels, a progression ladder, quests and boosts — all handled for you.
 
-You drive it entirely from **your own resource** using the **exports** and **events**
-below. You do **not** need access to Job Core's files or config to integrate — every
-server export takes the player's server id (`source`) and the events tell you when
-things happen in a run.
+It's a **copy-per-job template**: copy the resource, give it a unique `Config.JobId`, and
+build your job's gameplay inside the copy. Your gameplay drives the core through one global
+table — **`JobAPI`** — and a set of **events**, covered below. Every `JobAPI` function takes
+the player's server id (`source`); the events tell you when things happen in a run.
 
 {% content-ref url="exports-and-events.md" %}
 [exports-and-events.md](exports-and-events.md)
