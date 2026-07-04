@@ -13,12 +13,16 @@ description: >-
 
 Job Core is a **group-based job framework**: parties/crews, a shared mission session
 with synced objectives and a HUD, a shared payout pool with leader-defined splits,
-XP/levels, a progression ladder, quests and boosts — all handled for you.
+XP/levels, a progression ladder, quests, boosts, reconnect handling and a per-run
+state store — all handled for you. A run ends on **finish** (paid), **cancel** or
+**fail** (unpaid), or when the party dissolves.
 
 It's a **copy-per-job template**: copy the resource, give it a unique `Config.JobId`, and
-build your job's gameplay inside the copy. Your gameplay drives the core through one global
-table — **`JobAPI`** — and a set of **events**, covered below. Every `JobAPI` function takes
-the player's server id (`source`); the events tell you when things happen in a run.
+build your job's gameplay inside the copy (the `jobFunctionality/` folder — the shipped
+demo job there is the reference implementation). Your gameplay drives the core through one
+global table — **`JobAPI`** — and a set of **events**, covered below. Every `JobAPI`
+function takes the player's server id (`source`); the events tell you when things happen
+in a run.
 
 {% content-ref url="exports-and-events.md" %}
 [exports-and-events.md](exports-and-events.md)
