@@ -14,6 +14,15 @@ git clone https://github.com/DEVHUB-GG/devhub_lib.git
 {% endstep %}
 
 {% step %}
+### Install screenshot-basic
+
+`screenshot-basic` is **required** — the license system uses it to capture and upload the player's
+license portrait. It ships with most servers in the default `[system]` resources; if yours doesn't
+have it, download it from [citizenfx/screenshot-basic](https://github.com/citizenfx/screenshot-basic)
+and add it to your `resources` folder.
+{% endstep %}
+
+{% step %}
 ### Install resources from keymaster
 
 Download the <mark style="color:red;">LICENSE SYSTEM</mark> script file from keymaster.
@@ -26,12 +35,19 @@ Move the files to the `resources` folder on your server and add the following li
 
 ```javascript
 ensure devhub_lib
+ensure screenshot-basic
 ensure devhub_licenses
 ```
 
 {% hint style="info" %}
-On its **first** start the license system automatically sets up its built-in image API (used to host license avatar photos on your server). FiveM's built-in `yarn` resource installs the required Node dependencies for you — this can add a few seconds to the first start and needs **no** manual `npm install`. Following starts are instant.
+License avatar photos are captured in-game and uploaded to an image host that **you** choose in
+`configs/s.imagehost.lua`. Set this up before issuing licenses — the recommended path is a free
+[uploadhub.gg](https://uploadhub.gg) webhook (permanent links). See the guide below.
 {% endhint %}
+
+{% content-ref url="avatar-photo-hosting.md" %}
+[avatar-photo-hosting.md](avatar-photo-hosting.md)
+{% endcontent-ref %}
 {% endstep %}
 
 {% step %}

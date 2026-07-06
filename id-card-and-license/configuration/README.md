@@ -11,8 +11,10 @@ file is documented on its own page:
 
 * [**sh.main.lua**](sh.main.lua.md) — shared gameplay settings: pickup NPC, usage triggers, item
   shops, hideout, fake ID stations and mission, laptop integration.
-* [**s.main.lua**](s.main.lua.md) — server-only settings: Discord logging webhook, avatar
-  photo hosting settings, and the license data fields.
+* [**s.main.lua**](s.main.lua.md) — server-only settings: Discord logging webhook and the license
+  data fields.
+* [**s.imagehost.lua**](s.imagehost.lua.md) — where license avatar photos are hosted (uploadhub.gg
+  webhook or a custom host). See also the [🖼️ Avatar Photo Hosting](../avatar-photo-hosting.md) guide.
 * [**sh.lang.lua**](sh.lang.lua.md) — all translatable text (notifications, NPC dialog, UI labels).
 
 {% hint style="info" %}

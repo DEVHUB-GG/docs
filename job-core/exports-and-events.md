@@ -18,8 +18,8 @@ A few things that apply everywhere:
 
 * Every **`JobAPI`** function takes the player's server id (`source`) as its first argument.
 * The **action** functions (`StartJob`, `AddObjectiveProgress`, …) exist **server-side only**.
-  On the client you get `JobAPI.On(...)` plus the pure phase helpers
-  (`GetPhaseObjectives` / `BuildObjectiveIndex`) — nothing else.
+  On the client you get `JobAPI.On(...)`, the pure phase helpers
+  (`GetPhaseObjectives` / `BuildObjectiveIndex`) and `JobAPI.GetJobVehicle()` — nothing else.
 * "Objective" = a shared, party-pooled counter (`current` / `target`). Any crew member's
   progress counts toward it and is synced to everyone.
 * "Run" / "session" = one active job per party. It ends on **finish** (paid), **cancel**
@@ -397,14 +397,17 @@ The core drives the in-world side of a run too. Listen with `JobAPI.On` on the c
 props, blips and targets, and clean them up:
 
 ```lua
-JobAPI.On('client:jobStarted', function(data) end)  -- a run started for you; data.vehicle = your resolved job vehicle
-JobAPI.On('client:jobEnded',  function(data) end)   -- run ended (finish/cancel/fail/leave/kick)
-JobAPI.On('client:syncSession', function(data) end) -- run state changed
+JobAPI.On('client:jobStarted', function(data) end)         -- a run started for you; data.vehicle = your resolved job-vehicle config
+JobAPI.On('client:jobVehicleSpawned', function(v) end)     -- the job vehicle finished spawning; v = { vehicle, netId, plate }
+JobAPI.On('client:jobEnded',  function(data) end)          -- run ended (finish/cancel/fail/leave/kick)
+JobAPI.On('client:syncSession', function(data) end)        -- run state changed
 ```
 
 * **jobStarted** fires when a run begins for you **and on reconnect** (see below). Use it for
   one-off setup or to request any state you need from your own server side. The core itself
-  already handles the HUD and the job vehicle.
+  already handles the HUD and the job vehicle. `data.vehicle` is the **resolved config** for the
+  vehicle (model, spawn, keys, fuel) — not the spawned entity, which does not exist yet at this
+  point (see below).
 * **syncSession(data)** is the live picture of the run — reconcile your world to it on every fire:
 
   ```lua
@@ -423,6 +426,31 @@ JobAPI.On('client:syncSession', function(data) end) -- run state changed
 * **jobEnded(data)** — tear down whatever you spawned. Fires on finish, cancel, fail, leaving
   the party, being kicked, or disconnect. It does **not** say which one — if your job cares,
   track that server-side via the lifecycle events.
+
+### <mark style="color:yellow;">Reaching the job vehicle</mark>
+
+The core spawns the job vehicle **asynchronously**, so it does **not** exist yet inside your
+`client:jobStarted` handler — the entity handle can't be on the `jobStarted` payload. Get it one
+of two ways instead:
+
+```lua
+-- react the moment it is ready
+JobAPI.On('client:jobVehicleSpawned', function(v)
+    -- v.vehicle = local entity handle, v.netId = shareable network id, v.plate = plate text
+end)
+
+-- or pull it any time later
+local veh, netId, plate = JobAPI.GetJobVehicle()  -- nil, nil, nil when there is no live job vehicle
+```
+
+* **`client:jobVehicleSpawned`** fires once per spawn — on a fresh start **and on reconnect** —
+  the instant the vehicle is real. Only fires when the job actually spawns a vehicle
+  (`Config.Vehicle` enabled).
+* **`JobAPI.GetJobVehicle()`** returns the current vehicle's `entity, netId, plate`, or
+  `nil, nil, nil` when there is none. It is the one client-side action function the core exposes.
+* Use **`netId`** (from the network id) when you need to reference the vehicle from the server or
+  from other party members — the raw `entity` handle is only meaningful on the local client. The
+  vehicle is spawned **per client**, so each member has their own handle and network id.
 
 {% hint style="info" %}
 **Reconnect / anti-crash is built in.** If a player disconnects mid-run and returns within the

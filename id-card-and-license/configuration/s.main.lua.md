@@ -4,8 +4,12 @@ description: Documentation for s.main.lua Configuration
 
 # s.main.lua
 
-This file is server-only. It holds the Discord logging webhook, the avatar photo hosting
-settings, and the license **data fields**.
+This file is server-only. It holds the Discord logging webhook and the license **data fields**.
+
+{% hint style="info" %}
+Avatar photo hosting has moved to its own file — see [s.imagehost.lua](s.imagehost.lua.md) and the
+[🖼️ Avatar Photo Hosting](../avatar-photo-hosting.md) guide.
+{% endhint %}
 
 ## <mark style="color:yellow;">**LogsWebhook**</mark>
 
@@ -19,52 +23,6 @@ Config.LogsWebhook = "https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE"
 
 {% hint style="warning" %}
 Keep this webhook **server-side only** — never expose it to clients. The client triggers logs via the `devhub_licenses:server:sendLog` event so the URL stays on the server.
-{% endhint %}
-
-***
-
-## <mark style="color:yellow;">**Screenshot**</mark>
-
-```lua
-Config.Screenshot = {
-    -- Photo hosting method:
-    --   "local" -> save it on the server and serve it over the built-in image API
-    method = "local",
-
-    ["local"] = {
-        folder = "uploads", -- folder inside this resource where photos are stored
-        format = "webp",    -- image format for saved photos: "webp", "jpg" or "png"
-
-        -- Crop the captured frame to a centered portrait before saving.
-        -- Values are fractions (0..1) of the full screenshot: x/y = top-left corner,
-        -- width/height = size. Set crop = false to store the full frame.
-        crop = {
-            x = 0.22,
-            y = 0.0,
-            width = 0.56,
-            height = 1.0,
-        },
-
-        -- Resize the (cropped) photo to a fixed resolution before saving.
-        -- Set size = false to keep the cropped resolution.
-        size = {
-            width = 312,
-            height = 312,
-        },
-    },
-}
-```
-
-* **Description**: Controls how the license avatar photo (captured in‑game) is hosted. Photos are stored on **your** server and served on demand by the script's built‑in image API — no external service (Discord, Imgur, etc.) is involved.
-* **method**: Hosting method. Only `"local"` is available.
-* **local**: Settings for locally‑hosted photos.
-  * **folder**: Folder name used for stored photos.
-  * **format**: Image format for saved photos — `"webp"`, `"jpg"`, or `"png"`. `webp` produces the smallest files.
-  * **crop**: Crop the captured frame to a centered portrait before saving. Values are fractions (`0`–`1`) of the full screenshot: `x`/`y` is the top‑left corner, `width`/`height` the size. Set `crop = false` to store the full frame.
-  * **size**: Resize the cropped photo to a fixed resolution (`width` × `height`, in pixels). Set `size = false` to keep the cropped resolution.
-
-{% hint style="info" %}
-**No external image host required.** The script ships a small built‑in image API that stores avatars on your server and serves them over HTTP only when they're actually shown. Players **do not** download stored photos when they join — each avatar is fetched on demand the first time it's displayed and then cached. The API's dependencies are installed automatically on first start (see [Installation](../installation.md)).
 {% endhint %}
 
 ***
