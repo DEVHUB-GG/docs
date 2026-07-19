@@ -26,13 +26,15 @@ required.
 ## <mark style="color:yellow;">**/createzone**</mark>
 
 ```
-/createzone <uid>
+/createzone <uid> [persistent]
 ```
 
 * **Description**: Creates a ground zone with the given unique id. The four corner coordinates and
   the `moveStep` / `maxHeight` are read from the `gridConfig` defined inside the `/createzone`
-  command in `configs/c.commands.lua` — edit those to your own location before running it.
-* **Example**: `/createzone warehouse1`
+  command in `configs/c.commands.lua` — edit those to your own location before running it. Pass
+  `persistent` as the second argument to create a server-owned zone that survives your disconnect
+  (see [Exports](exports.md) for the `persistent` option).
+* **Example**: `/createzone warehouse1` or `/createzone warehouse1 persistent`
 
 ***
 

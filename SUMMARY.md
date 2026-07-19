@@ -201,6 +201,7 @@
   * [💻 Installation](id-card-and-license/installation.md)
   * [🖼️ Avatar Photo Hosting](id-card-and-license/avatar-photo-hosting.md)
   * [🛠️ Configuration](id-card-and-license/configuration/README.md)
+    * [s.compat.lua](id-card-and-license/configuration/s.compat.lua.md)
     * [s.imagehost.lua](id-card-and-license/configuration/s.imagehost.lua.md)
     * [s.main.lua](id-card-and-license/configuration/s.main.lua.md)
     * [sh.lang.lua](id-card-and-license/configuration/sh.lang.lua.md)

@@ -38,7 +38,11 @@ in two phases:
   [Exports](exports.md)).
 * **Ownership & lifetime** — a zone is owned by a player; the zone and its props live while that
   player is connected and are removed when they disconnect. Choose the owner when creating the zone
-  (`RequestCreateZone(..., ownerServerId)`) or reassign it later (`SetZoneOwner`).
+  (`RequestCreateZone(..., ownerServerId)`) or reassign it later (`SetZoneOwner`). Alternatively,
+  set `persistent = true` in the `gridConfig` to create a **server-owned zone** that has no owner:
+  it survives every player's disconnect and stays in place — manageable by any player — until it is
+  explicitly deleted or the resource stops. No database is used; persistent zones do not survive a
+  server restart.
 * **Streaming** — placed props are streamed in and out automatically based on how close players are
   to the zone, so a large scene has no cost for players who are far away.
 

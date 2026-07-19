@@ -24,6 +24,19 @@ Config.Dev = false
 
 ***
 
+## <mark style="color:yellow;">**NotifyOnExportFailure**</mark>
+
+```lua
+Config.NotifyOnExportFailure = true
+```
+
+* **Description**: When `true` (default), any [export](../exports-and-events.md) that fails also shows the affected player a `Core.Notify` explaining why (e.g. _"Your license data is still loading."_). The exports still return their `success, error` values regardless — this only controls the automatic notification.
+* **Who is notified**: On the **client**, the local player who called the export. On the **server**, the `source` player passed to the export; system calls (`source` `0`/`nil`) and the template/metadata exports (which have no player) never notify. The side-effect-free check `isPlayerLoaded` never notifies either.
+* **When to turn it off**: If your own integration already messages the player on failure, or if you call these exports from loops/polling where repeated notifications would spam the player.
+* **Messages**: Pulled from the `export_fail_*` keys in [`sh.lang.lua`](sh.lang.lua.md) — edit those to reword or translate them.
+
+***
+
 ## <mark style="color:yellow;">**RetakeableLicenseStatus**</mark>
 
 ```lua

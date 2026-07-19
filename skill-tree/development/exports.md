@@ -402,7 +402,7 @@ exports['devhub_skillTree']:getSkillEffect(categoryUid, skillUid)
 * `categoryUid` (string): Skill category name
 * `skillUid` (string): Unique identifier of the skill
 
-**Returns:** Effect value (number) or 5 if not found
+**Returns:** Effect value (number) or 0 if not found
 
 **Example**
 

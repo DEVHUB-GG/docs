@@ -6,8 +6,8 @@ description: >-
 
 # 📚 Exports
 
-The Grid System exposes **client exports** for zones and prop placement, a **server export** for
-zone ownership, and two **prop-catalog helpers** for registering models at runtime. Prop positions
+The Grid System exposes **client exports** for zones and prop placement, **server exports** for
+zone ownership and persistence, and two **prop-catalog helpers** for registering models at runtime. Prop positions
 are always given in **zone-local meters** (see [the coordinate model](README.md)).
 
 ## <mark style="color:yellow;">**Client Exports**</mark>
@@ -36,9 +36,10 @@ exports['devhub_grid']:ActivateEditMode(uid, mode, model, data)                 
 
   ```lua
   {
-      moveStep  = 0.1,   -- grid step in meters
-      maxHeight = 5.0,   -- max stacking height in meters
-      coords = {         -- four corners; corner 1 is the origin, 1->2 is X, 1->4 is Y
+      moveStep  = 0.1,     -- grid step in meters
+      maxHeight = 5.0,     -- max stacking height in meters
+      persistent = false,  -- optional: true = server-owned zone (see below)
+      coords = {           -- four corners; corner 1 is the origin, 1->2 is X, 1->4 is Y
           vec3(1764.5430, 3242.1836, 41.1580),
           vec3(1774.2539, 3244.5032, 41.1580),
           vec3(1775.9097, 3237.3862, 41.1580),
@@ -46,6 +47,11 @@ exports['devhub_grid']:ActivateEditMode(uid, mode, model, data)                 
       },
   }
   ```
+
+  Set `persistent = true` to create a **server-owned zone** with no owner: it survives every
+  player's disconnect (`ownerServerId` is ignored) and stays in place — manageable by any player —
+  until `RequestDeleteZone` is called or the resource stops. Persistent zones are held in memory
+  only; they do not survive a server restart.
 
 * **RequestDeleteZone(uid)**: Removes the zone and all of its props for every player. Returns `true`
   on success.
@@ -87,11 +93,19 @@ Call these from any server script as `exports['devhub_grid']:<name>(...)`.
 
 ```lua
 exports['devhub_grid']:SetZoneOwner(uid, ownerServerId)   -- bool
+exports['devhub_grid']:SetZonePersistent(uid, persistent) -- bool
 ```
 
 * **SetZoneOwner(uid, ownerServerId)**: Reassigns the owner of an existing zone to the given
   connected player. The zone and its props are removed when the owner disconnects, so use this to
-  hand a scripted zone to whichever player should keep it alive. Returns `true` on success.
+  hand a scripted zone to whichever player should keep it alive. Calling this on a persistent zone
+  converts it back to a player-owned zone. Returns `true` on success.
+
+* **SetZonePersistent(uid, persistent)**: Makes an existing zone persistent (`true`) or reverts it
+  (`false`). A persistent zone becomes server-owned — its owner is cleared and it survives every
+  player's disconnect. When reverting, assign a new owner with `SetZoneOwner` afterwards; until you
+  do, the zone stays ownerless and keeps behaving like a persistent one. Returns `true` on success,
+  `false` if the zone does not exist.
 
 ***
 
