@@ -74,8 +74,9 @@ description: This guide explains how the racing system works from start to finis
 
 * Official races: Joining restricted to 30+ minutes before start time.
 * Players can press `E` to leave waiting room before race starts.
-* Players who leave their vehicle are automatically removed from race.
+* Players who leave their vehicle during a race get a "Return to your vehicle" prompt and a grace period (`Config.LeaveVehicleGraceTime`, default 20s) to get back in before being removed. Set the grace time to `0` to remove them instantly.
 * Vehicle class validation occurs at join time and race start time.
+* Admins (subject to `Config.IsAdminPermissionRequired['cancelRace']`) can cancel a race at any time, which removes everyone who has already joined.
 
 ***
 

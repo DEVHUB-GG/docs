@@ -171,6 +171,14 @@ Config.DisableLocalVehicleDuringRace = true
 
 * **DisableLocalVehicleDuringRace**: Disables all local vehicles and traffic while racing.
 
+### Leave Vehicle Grace Time
+
+```lua
+Config.LeaveVehicleGraceTime = 20
+```
+
+* **LeaveVehicleGraceTime**: Seconds a player has to get back into a vehicle after leaving it during an active race before being removed. While the timer is counting down, an on-screen "Return to your vehicle" prompt is shown. Set to `0` to remove the player instantly the moment they leave the vehicle.
+
 ### Payment Configuration
 
 ```lua
@@ -192,6 +200,7 @@ Config.IsAdminPermissionRequired = {
     ['createRace'] = true,
     ['editMap'] = false,
     ['editAnyMap'] = true,
+    ['cancelRace'] = true,
 }
 ```
 
@@ -200,6 +209,7 @@ Config.IsAdminPermissionRequired = {
 * **createRace**: Requires admin to create new races.
 * **editMap**: Requires admin to edit own maps (false = anyone can edit their maps).
 * **editAnyMap**: Requires admin to edit any user's maps.
+* **cancelRace**: Requires admin to cancel a race. Cancelling removes everyone who has already joined.
 
 ### Race Music System
 
@@ -390,6 +400,8 @@ Open client-side functions for custom integration:
 ```lua
 OpenClientFunctions = {
     CanJoinRace = function(raceData) return true end,
+    ShouldShowJoinUi = function(raceData) return true end,
+    ShouldShowBlip = function(raceData) return true end,
     JoinRace = function(activeRaceData) return end,
     RaceLeave = function(activeRaceData) return end,
     CheckpointPassed = function(activeRaceData, checkpointIndex) return end,
@@ -399,11 +411,17 @@ OpenClientFunctions = {
 ```
 
 * **CanJoinRace**: Custom validation before joining a race (return true/false).
+* **ShouldShowJoinUi**: Return `false` to hide the built-in 3D "join race" prompt for this player/race. Called every tick while near a race, so keep it lightweight. When you hide it, drive joining yourself with the `JoinNearestRace` / `JoinRaceById` exports.
+* **ShouldShowBlip**: Return `false` to hide the race start blip for this player/race.
 * **JoinRace**: Triggered when player joins a race.
 * **RaceLeave**: Triggered when player leaves or is removed from race.
 * **CheckpointPassed**: Triggered each time a checkpoint is passed.
 * **LapComplete**: Triggered after completing a lap (loop races only).
 * **RaceFinish**: Triggered when player finishes the race.
+
+{% hint style="info" %}
+`ShouldShowJoinUi` and `ShouldShowBlip` are documented in full on the [Exports](exports.md) page.
+{% endhint %}
 
 ***
 
