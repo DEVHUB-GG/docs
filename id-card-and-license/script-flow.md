@@ -31,6 +31,10 @@ With `Config.UsePhysicalLicenses = true`, licenses are physical inventory items 
 and `/favorites` commands are disabled — players use the items instead.
 {% endhint %}
 
+{% content-ref url="using-licenses-as-items.md" %}
+[using-licenses-as-items.md](using-licenses-as-items.md)
+{% endcontent-ref %}
+
 ***
 
 ## <mark style="color:yellow;">**Getting a license**</mark>

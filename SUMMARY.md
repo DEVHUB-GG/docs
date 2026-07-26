@@ -200,6 +200,7 @@
 * [🪪 License System](id-card-and-license/README.md)
   * [💻 Installation](id-card-and-license/installation.md)
   * [🖼️ Avatar Photo Hosting](id-card-and-license/avatar-photo-hosting.md)
+  * [📦 Using Licenses as Items](id-card-and-license/using-licenses-as-items.md)
   * [🛠️ Configuration](id-card-and-license/configuration/README.md)
     * [s.compat.lua](id-card-and-license/configuration/s.compat.lua.md)
     * [s.imagehost.lua](id-card-and-license/configuration/s.imagehost.lua.md)

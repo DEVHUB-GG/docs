@@ -38,12 +38,41 @@ ensure devhub_lib
 ensure screenshot-basic
 ensure devhub_licenses
 ```
+{% endstep %}
 
-{% hint style="info" %}
-License avatar photos are captured in-game and uploaded to an image host that **you** choose in
-`configs/s.imagehost.lua`. Set this up before issuing licenses — the recommended path is a free
-[uploadhub.gg](https://uploadhub.gg) webhook (permanent links). See the guide below.
+{% step %}
+### Database Setup
+
+Import the `sql.sql` file into your database.
+{% endstep %}
+
+{% step %}
+### Set up avatar photo hosting
+
+<mark style="color:red;">**Required.**</mark> License photos are captured in-game and uploaded to an
+image host that **you** choose in `configs/s.imagehost.lua`. Configure it **before** issuing any
+license, otherwise licenses are created without a picture.
+
+Open `configs/s.imagehost.lua` and either:
+
+* keep `provider = "webhook"` and paste your own [uploadhub.gg](https://uploadhub.gg) webhook URL
+  into the `webhook` field (recommended, the links never expire), or
+* set `provider = "custom"` and host the images yourself through the `UploadAvatarImage` function.
+
+```lua
+Config.AvatarUpload = {
+    provider = "webhook",
+    webhook = "YOUR_UPLOADHUB_WEBHOOK_URL",
+}
+```
+
+{% hint style="danger" %}
+Do not paste a raw Discord webhook here. Discord CDN links expire, so every license photo will
+eventually turn into a broken image.
 {% endhint %}
+
+Full step-by-step guide:
+[https://devhub.gg/docs/id-card-and-license/avatar-photo-hosting](https://devhub.gg/docs/id-card-and-license/avatar-photo-hosting)
 
 {% content-ref url="avatar-photo-hosting.md" %}
 [avatar-photo-hosting.md](avatar-photo-hosting.md)
@@ -51,9 +80,15 @@ License avatar photos are captured in-game and uploaded to an image host that **
 {% endstep %}
 
 {% step %}
-### Database Setup
+### Add the items to your inventory
 
-Import the `sql.sql` file into your database.
+Register the items shipped in the resource's `items/` folder (holder, favorites, MDT, fake-license
+supplies, and any physical license items) in your inventory resource, and copy the icons from
+`items/images`.
+
+{% content-ref url="using-licenses-as-items.md" %}
+[using-licenses-as-items.md](using-licenses-as-items.md)
+{% endcontent-ref %}
 {% endstep %}
 
 {% step %}
