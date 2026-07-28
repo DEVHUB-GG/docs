@@ -20,15 +20,14 @@ git clone https://github.com/DEVHUB-GG/devhub_lib.git
 {% step %}
 ### Install resources from keymaster
 
-Download the <mark style="color:red;">GYM V2</mark> files from keymaster. The product ships **three** resources:
+Download the <mark style="color:red;">GYM V2</mark> files from keymaster. The product ships **two** resources:
 
 | Resource | What it is |
 | --- | --- |
 | `devhub_gym2` | The script itself. |
 | `devhub_gym2_assets` | Streamed gym props (the machines you place in the creator). |
-| `devhub_gym2_assets_anim` | Streamed animation props used by the exercises. |
 
-All three are required. The two asset resources contain no code, only stream files.
+Both are required. The assets resource contains no code, only stream files.
 {% endstep %}
 
 {% step %}
@@ -64,7 +63,6 @@ Move the files to the `resources` folder on your server and add the following li
 ```javascript
 ensure devhub_lib
 ensure devhub_gym2_assets
-ensure devhub_gym2_assets_anim
 ensure devhub_gym2
 ```
 

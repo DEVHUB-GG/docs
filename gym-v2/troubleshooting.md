@@ -27,11 +27,10 @@ The server also rejects every creator action from a player without it, so forcin
 
 <summary>The machines are invisible, or they show up as a red question mark</summary>
 
-`devhub_gym2_assets` and `devhub_gym2_assets_anim` are not started. Both are required and both have to be in your `server.cfg`:
+`devhub_gym2_assets` is not started. It ships the gym props and has to be in your `server.cfg`:
 
 ```javascript
 ensure devhub_gym2_assets
-ensure devhub_gym2_assets_anim
 ensure devhub_gym2
 ```
 
