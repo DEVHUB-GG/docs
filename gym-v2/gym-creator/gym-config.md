@@ -61,6 +61,27 @@ With no tiers configured, players get no health bonus.
 
 The same idea, but the value is a **Stamina Regen %** speed-up instead of health.
 
+### Stat Decay
+
+Off by default. Switch it on and both stats lose XP every day, whether the player trained or not.
+
+| Field | What it does |
+| --- | --- |
+| **XP Loss per Day (%)** | A share of the XP the **current level** needs, not a flat number. Default `10`. |
+| **Minimum Level** | Decay never takes a stat below this level. Default `5`. |
+
+The percentage is the important part. The XP curve is exponential, so a flat number would behave completely differently at each end: 25 XP is a quarter of a level at level 1 and a rounding error at level 50. As a percentage the pressure is identical everywhere, and `10` means **ten idle days cost one level** whether the player is level 8 or level 80.
+
+Decay can walk levels back, and a lost level takes its bonus max health or stamina regen with it, so players feel it immediately. It stops at **Minimum Level** with an empty XP bar and never goes further. A player already below that level is left alone entirely.
+
+{% hint style="info" %}
+Days spent offline count. A player who comes back after two weeks has those days applied the moment they load in, and their stats are already updated on the first screen they see. Someone who crosses midnight while online is charged on the next server tick.
+{% endhint %}
+
+{% hint style="warning" %}
+Turning this on changes how an existing server's progression feels, which is why it ships off. The clock starts the first time a player is seen after you enable it, so nobody is charged retroactively for the weeks before you switched it on.
+{% endhint %}
+
 ### Per Body-Part Weights
 
 Two numbers per body part, **Strength** and **Agility**, deciding which stat that muscle feeds.

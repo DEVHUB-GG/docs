@@ -40,7 +40,7 @@ The slider runs from 1 to 200 meters. The current value is shown in meters next 
 {% step %}
 ### Check it with the eye button
 
-Click the **eye** and the area is drawn in the world so you can see exactly what it covers. Press **TAB** to peek out of the interface while it is drawn. Click the button again (it now shows a stop icon) to hide it.
+Click the **eye** and the area is drawn in the world so you can see exactly what it covers. Press **RIGHT SHIFT** to peek out of the interface while it is drawn. Click the button again (it now shows a stop icon) to hide it.
 
 The preview only runs while you are on the **Other** tab. Leaving the tab turns it off by itself.
 {% endstep %}

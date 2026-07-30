@@ -44,7 +44,7 @@ Four things live in the top right corner, and you will use all of them:
 
 | Control | What it does |
 | --- | --- |
-| **TAB Peek** | Hides the interface so you can look at the world without losing your place. A small `TAB Return to editor` hint stays on screen. Press `TAB` again to come back. |
+| **R SHIFT Peek** | Hides the interface so you can look at the world without losing your place. A hint stays on screen. Press `RIGHT SHIFT` again to come back, or `ESC`. The key can be rebound in the FiveM key settings under **Gym creator: return from peek**. |
 | **Compact / Expand** | Shrinks the whole panel so you can see more of the room behind it. Handy while placing props in a small MLO. |
 | **ESC** | Closes the creator. |
 | **X** | The same as `ESC`. |

@@ -70,6 +70,23 @@ Finding what you want is easiest by searching for the English text rather than b
 
 ***
 
+## <mark style="color:yellow;">**Exercise names**</mark>
+
+Every exercise carries a name and a category in its own file under `escrowed/gym/shared/exercises/`. Those are the **fallback**, not the final text. If a matching key exists here, it wins:
+
+```lua
+['exercise_bench_press_name'] = "Bench Press",
+['exercise_category_strength'] = "Strength",
+```
+
+The pattern is `exercise_<id>_name` and `exercise_category_<id>`, where the id is the one in the exercise file. Translating these changes the name everywhere at once: the third-eye option on the machine, the workout catalog in the gym menu, and the exercise picker in the Gym Creator.
+
+{% hint style="info" %}
+An exercise you wrote yourself needs no key here. Without one it simply shows the `name` from its own file, so adding exercises never breaks and never forces you to touch this file.
+{% endhint %}
+
+***
+
 ## <mark style="color:yellow;">**HTML in the values**</mark>
 
 A few entries deliberately contain HTML, and it is safe to keep:
