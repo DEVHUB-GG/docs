@@ -141,6 +141,7 @@
     * [translation.lua](gym-v2/configuration/translation.lua.md)
     * [skillTree.lua](gym-v2/configuration/skilltree.lua.md)
     * [businesses.lua](gym-v2/configuration/businesses.lua.md)
+  * [⚙️ Exports](gym-v2/exports.md)
   * [🎨 UI Color Customization](gym-v2/ui-color-customization.md)
   * [🩺 Troubleshooting](gym-v2/troubleshooting.md)
 * [🏋️ Gym](gym/README.md)

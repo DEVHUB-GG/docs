@@ -56,6 +56,13 @@ A full gym system for your city: place every machine yourself with an in-game gi
 | [business-panel.md](businesses/business-panel.md) | The eleven pages the owner and staff use. |
 | [admin-panel.md](businesses/admin-panel.md) | Creating businesses, assigning zones, server-wide rules. |
 
+### For developers
+
+| Page | What it covers |
+| --- | --- |
+| [server.lua](configuration/server.lua.md) | The hooks your resources plug into, including the three that wrap a workout set. |
+| [exports.md](exports.md) | Granting, revoking and reading memberships from your own code. |
+
 ### Files and appearance
 
 | Page | What it covers |

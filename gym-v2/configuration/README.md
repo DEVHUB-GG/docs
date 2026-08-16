@@ -18,7 +18,7 @@ The files live in the `configs/` folder of the resource and are never encrypted.
 | --- | --- |
 | [shared.lua](shared.lua.md) | Debug flag, the skill tree switch, and the Discord logging setup. |
 | [client.lua](client.lua.md) | Sound volumes and the detection loop tunables. |
-| [server.lua](server.lua.md) | The `OpenStash` hook you wire into your inventory. |
+| [server.lua](server.lua.md) | The `OpenStash` hook, the stat hooks, and the three exercise hooks. |
 | [translation.lua](translation.lua.md) | Every text the player and the admin can see. |
 | [skillTree.lua](skilltree.lua.md) | The optional `devhub_skillTree` perks. |
 | [businesses.lua](businesses.lua.md) | Name pools for generated delivery companies and workers. |
